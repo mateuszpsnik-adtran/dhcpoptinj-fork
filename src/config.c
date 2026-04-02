@@ -229,7 +229,7 @@ static void printUsage(void)
 	printVersion();
 	printf(
 			"\n"
-         "Usage: %s [-df] [--forward-on-fail] [-i|-r] [-p [pid_file]] \n"
+         "Usage: %s [-df] [--forward-on-fail] [-i|-r|-s] [-p [pid_file]] \n"
 			"       %*s [-c [config_file]]\n"
 			"       %*s -q queue_num -o dhcp_option [(-o dhcp_option) ...]\n"
 			"       %s -h|-v\n"
@@ -288,7 +288,10 @@ static void printHelp(void)
 			"  -q, --queue queue_num      Netfilter queue number to use\n"
 			"  -r, --remove-existing-opt  Remove existing DHCP options of the same\n"
 			"                             kind as those to be injected\n"
-         "  -v, --version              Display version\n"
+			"  -s, --pass-existing-opt    Forward the packet unchanged without injecting\n"
+			"                             if an option of the same kind already exists\n"
+			"                             in the original packet\n"
+		 "  -v, --version              Display version\n"
 			,
 		programName,
 		programName,
@@ -325,12 +328,13 @@ static void printHelp(void)
 			"\n"
 			"If the packet already contains a DHCP option that is to be injected\n"
 			"(matched by code), the behaviour depends on the command line options\n"
-			"--ignore-existing-opt and --remove-existing-opt:\n"
+			"--ignore-existing-opt, --remove-existing-opt and --pass-existing-opt:\n"
 			"   (none)   The packet will be dropped\n"
 			"   -i       The existing options are ignored and the injected options\n"
 			"            are added\n"
 			"   -r       Any existing options are removed and the injected options\n"
-			"            are added.\n"
+			"            are added\n"
+			"   -s       The packet is forwarded unchanged (injection is skipped)\n"
 			"\n"
 			"Note that injected options will not be injected in the same place as\n"
 			"those that may have been removed if using -r. However, this should not\n"
