@@ -30,7 +30,7 @@ struct Config
 	bool foreground;
 	/* Print a lot of extra information */
 	bool debug;
-	/* Absolute path to PID file, or NULL if writing PID is diabled */
+	/* Absolute path to PID file, or NULL if writing PID is disabled */
 	char *pidFile;
 	/* netfilter queue number */
 	uint16_t queue;
@@ -44,10 +44,12 @@ struct Config
 	size_t dhcpOptCodeCount;
 	/* (none):              Whine and drop packet
 	 * ignore:              Ignore existing options and add new options
-	 * remove:              Remove all exisiting options and add new options
+	 * remove:              Remove all existing options and add new options
+	 * pass:                Forward packet unchanged if option already exists
 	 */
 	bool ignoreExistOpt;
 	bool removeExistOpt;
+	bool passExistOpt;
 	/* If option injection should fail, forward/accept packet instead of
 	 * dropping it */
 	bool fwdOnFail;
