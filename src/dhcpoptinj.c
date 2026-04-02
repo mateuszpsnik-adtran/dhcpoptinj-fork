@@ -56,6 +56,7 @@ enum MangleResult
 	Mangle_OK = 0,
 	Mangle_mallocFail,
 	Mangle_optExists,
+	Mangle_optExistsPass,
 };
 
 /* Somewhat arbitrary, feel free to change */
