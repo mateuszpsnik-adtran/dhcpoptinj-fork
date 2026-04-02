@@ -56,6 +56,7 @@ enum MangleResult
 	Mangle_OK = 0,
 	Mangle_mallocFail,
 	Mangle_optExists,
+	Mangle_optExistsPass,
 };
 
 /* Somewhat arbitrary, feel free to change */
@@ -275,6 +276,11 @@ static int inspectPacket(struct nfq_q_handle *queue, struct nfgenmsg *pktInfo,
 		logMessage(LOG_INFO, "Dropping the packet because option already exists\n");
 		return nfq_set_verdict(queue, ntohl(metaHeader->packet_id), NF_DROP, 0, NULL);
 	}
+	else if (result == Mangle_optExistsPass)
+	{
+		logMessage(LOG_INFO, "Option already exists, passing packet through unchanged\n");
+		return nfq_set_verdict(queue, ntohl(metaHeader->packet_id), NF_ACCEPT, 0, NULL);
+	}
 	else if (result != Mangle_OK)
 	{
 		logMessage(LOG_ERR, "Internal error: unexpected return value from manglePacket(): %d\n",
@@ -438,11 +444,19 @@ static enum MangleResult mangleOptions(const uint8_t *origData, size_t origDataS
 						break;
 					}
 
-			/* If the option already exists in original payload, but is not to be
-			 * removed, and ignore command line option is not provided, drop
-			 * packet: */
+			/* If the option already exists in original payload, but none of
+			 * the remove, ignore or pass command line options is provided,
+			 * drop the packet:	*/
 			if (optFound && !config->removeExistOpt && !config->ignoreExistOpt)
 			{
+				if (config->passExistOpt)
+				{
+					if (config->debug)
+						logMessage(LOG_DEBUG, " (passing through)\n");
+
+					return Mangle_optExistsPass;
+				}
+
 				if (config->debug)
 					logMessage(LOG_DEBUG, " (conflict)\n");
 
@@ -598,8 +612,9 @@ static void debugLogOptions(void)
 		logMessage(LOG_DEBUG, "%u (0x%02X) (%s)%s", code, code, dhcp_optionString(
 					code), delim);
 	}
-	logMessage(LOG_DEBUG, "Existing options will be %s\n", config->removeExistOpt ?
-			"removed" : "left in place");
+	const char *existOptAction = config->removeExistOpt ? "removed" :
+			(config->passExistOpt ? "passed through unchanged" : "left in place");
+	logMessage(LOG_DEBUG, "Existing options will be %s\n", existOptAction);
 }
 
 static void inspectOptions(void)

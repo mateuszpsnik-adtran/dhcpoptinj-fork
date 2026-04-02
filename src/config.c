@@ -67,6 +67,7 @@ enum Option
 	OPT_HELP,
 	OPT_IGNORE_EXISTING_OPT,
 	OPT_OPTION,
+	OPT_PASS_EXISTING_OPT,
 	OPT_PID_FILE,
 	OPT_QUEUE,
 	OPT_REMOVE_EXISTING_OPT,
@@ -90,6 +91,7 @@ static const struct option options[] =
 	[OPT_HELP]                = { "help",                no_argument,       NULL, 'h' },
 	[OPT_IGNORE_EXISTING_OPT] = { "ignore-existing-opt", no_argument,       NULL, 'i' },
 	[OPT_OPTION]              = { "option",              required_argument, NULL, 'o' },
+	[OPT_PASS_EXISTING_OPT]   = { "pass-existing-opt",   no_argument,       NULL, 's' },
 	[OPT_PID_FILE]            = { "pid-file",            optional_argument, NULL, 'p' },
 	[OPT_QUEUE]               = { "queue",               required_argument, NULL, 'q' },
 	[OPT_REMOVE_EXISTING_OPT] = { "remove-existing-opt", no_argument,       NULL, 'r' },
@@ -133,7 +135,7 @@ struct Config *conf_parseOpts(int argc, char * const *argv)
 
 	while (true)
 	{
-		int optVal = getopt_long(argc, argv, "c::dfhio:p::q:rv", options, NULL);
+		int optVal = getopt_long(argc, argv, "c::dfhio:p::q:rsv", options, NULL);
 
 		/* Parsing finished: */
 		if (optVal == -1)
@@ -227,7 +229,7 @@ static void printUsage(void)
 	printVersion();
 	printf(
 			"\n"
-         "Usage: %s [-df] [--forward-on-fail] [-i|-r] [-p [pid_file]] \n"
+         "Usage: %s [-df] [--forward-on-fail] [-i|-r|-s] [-p [pid_file]] \n"
 			"       %*s [-c [config_file]]\n"
 			"       %*s -q queue_num -o dhcp_option [(-o dhcp_option) ...]\n"
 			"       %s -h|-v\n"
@@ -286,7 +288,10 @@ static void printHelp(void)
 			"  -q, --queue queue_num      Netfilter queue number to use\n"
 			"  -r, --remove-existing-opt  Remove existing DHCP options of the same\n"
 			"                             kind as those to be injected\n"
-         "  -v, --version              Display version\n"
+			"  -s, --pass-existing-opt    Forward the packet unchanged without injecting\n"
+			"                             if an option of the same kind already exists\n"
+			"                             in the original packet\n"
+		 "  -v, --version              Display version\n"
 			,
 		programName,
 		programName,
@@ -323,12 +328,17 @@ static void printHelp(void)
 			"\n"
 			"If the packet already contains a DHCP option that is to be injected\n"
 			"(matched by code), the behaviour depends on the command line options\n"
-			"--ignore-existing-opt and --remove-existing-opt:\n"
+			"--ignore-existing-opt, --remove-existing-opt and --pass-existing-opt:\n"
 			"   (none)   The packet will be dropped\n"
 			"   -i       The existing options are ignored and the injected options\n"
 			"            are added\n"
 			"   -r       Any existing options are removed and the injected options\n"
-			"            are added.\n"
+			"            are added\n"
+			"   -s       The packet is forwarded unchanged (injection is skipped)\n"
+			"\n"
+			"Note that the match is performed per packet, not per option: if any\n"
+			"of the injected option codes (specified with -o) is found in the\n"
+			"packet, the selected behaviour applies to the entire packet.\n"
 			"\n"
 			"Note that injected options will not be injected in the same place as\n"
 			"those that may have been removed if using -r. However, this should not\n"
@@ -516,6 +526,10 @@ static void parseOption(struct Config *config, int option, char *arg, enum Sourc
 		case OPT_IGNORE_EXISTING_OPT:
 			config->ignoreExistOpt = true;
 			break;
+
+		case OPT_PASS_EXISTING_OPT:
+			config->passExistOpt = true;
+			break;
 			
 		case OPT_PID_FILE:
 			if (config->pidFile)
@@ -606,6 +620,30 @@ static void validateOptionCombinations(void)
 		fprintf(stderr, "Both %s%s and %s%s cannot be used at the same time\n",
 				optionCount[SOURCE_CMD_LINE][OPT_IGNORE_EXISTING_OPT] ? "--" : "",
 				options[OPT_IGNORE_EXISTING_OPT].name,
+				optionCount[SOURCE_CMD_LINE][OPT_REMOVE_EXISTING_OPT] ? "--" : "",
+				options[OPT_REMOVE_EXISTING_OPT].name);
+		printUsage();
+		exit(EXIT_FAILURE);
+	}
+
+	if (totalOptionCount(OPT_PASS_EXISTING_OPT) && totalOptionCount(
+				OPT_IGNORE_EXISTING_OPT))
+	{
+		fprintf(stderr, "Both %s%s and %s%s cannot be used at the same time\n",
+				optionCount[SOURCE_CMD_LINE][OPT_PASS_EXISTING_OPT] ? "--" : "",
+				options[OPT_PASS_EXISTING_OPT].name,
+				optionCount[SOURCE_CMD_LINE][OPT_IGNORE_EXISTING_OPT] ? "--" : "",
+				options[OPT_IGNORE_EXISTING_OPT].name);
+		printUsage();
+		exit(EXIT_FAILURE);
+	}
+
+	if (totalOptionCount(OPT_PASS_EXISTING_OPT) && totalOptionCount(
+				OPT_REMOVE_EXISTING_OPT))
+	{
+		fprintf(stderr, "Both %s%s and %s%s cannot be used at the same time\n",
+				optionCount[SOURCE_CMD_LINE][OPT_PASS_EXISTING_OPT] ? "--" : "",
+				options[OPT_PASS_EXISTING_OPT].name,
 				optionCount[SOURCE_CMD_LINE][OPT_REMOVE_EXISTING_OPT] ? "--" : "",
 				options[OPT_REMOVE_EXISTING_OPT].name);
 		printUsage();
