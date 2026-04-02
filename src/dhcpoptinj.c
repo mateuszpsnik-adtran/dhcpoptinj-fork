@@ -439,11 +439,19 @@ static enum MangleResult mangleOptions(const uint8_t *origData, size_t origDataS
 						break;
 					}
 
-			/* If the option already exists in original payload, but is not to be
-			 * removed, and ignore command line option is not provided, drop
-			 * packet: */
+			/* If the option already exists in original payload, but none of
+			 * the remove, ignore or pass command line options is provided,
+			 * drop the packet:	*/
 			if (optFound && !config->removeExistOpt && !config->ignoreExistOpt)
 			{
+				if (config->passExistOpt)
+				{
+					if (config->debug)
+						logMessage(LOG_DEBUG, " (passing through)\n");
+
+					return Mangle_optExistsPass;
+				}
+
 				if (config->debug)
 					logMessage(LOG_DEBUG, " (conflict)\n");
 
