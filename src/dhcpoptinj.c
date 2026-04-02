@@ -276,6 +276,11 @@ static int inspectPacket(struct nfq_q_handle *queue, struct nfgenmsg *pktInfo,
 		logMessage(LOG_INFO, "Dropping the packet because option already exists\n");
 		return nfq_set_verdict(queue, ntohl(metaHeader->packet_id), NF_DROP, 0, NULL);
 	}
+	else if (result == Mangle_optExistsPass)
+	{
+		logMessage(LOG_INFO, "Option already exists, passing packet through unchanged\n");
+		return nfq_set_verdict(queue, ntohl(metaHeader->packet_id), NF_ACCEPT, 0, NULL);
+	}
 	else if (result != Mangle_OK)
 	{
 		logMessage(LOG_ERR, "Internal error: unexpected return value from manglePacket(): %d\n",
