@@ -612,8 +612,9 @@ static void debugLogOptions(void)
 		logMessage(LOG_DEBUG, "%u (0x%02X) (%s)%s", code, code, dhcp_optionString(
 					code), delim);
 	}
-	logMessage(LOG_DEBUG, "Existing options will be %s\n", config->removeExistOpt ?
-			"removed" : "left in place");
+	const char *existOptAction = config->removeExistOpt ? "removed" :
+			(config->passExistOpt ? "passed through unchanged" : "left in place");
+	logMessage(LOG_DEBUG, "Existing options will be %s\n", existOptAction);
 }
 
 static void inspectOptions(void)
