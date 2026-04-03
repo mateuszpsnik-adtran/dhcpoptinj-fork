@@ -23,7 +23,12 @@ project(
 	DESCRIPTION "DHCP option injector"
 	LANGUAGES C
 	)
-add_definitions(-DDHCPOPTINJ_VERSION="${PROJECT_VERSION}")
+
+# Keep project version numeric for CMake while allowing revision tags:
+set(REVISION_SUFFIX "-r1")
+set(PROJECT_VERSION_FULL "${PROJECT_VERSION}${REVISION_SUFFIX}")
+add_definitions(-DDHCPOPTINJ_VERSION="${PROJECT_VERSION_FULL}")
+
 set(SOURCES
 	src/config.c
 	src/dhcp.c

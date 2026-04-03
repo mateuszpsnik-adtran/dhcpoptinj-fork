@@ -6,6 +6,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+## 0.5.3-r1 - 2026-04-03
+### Added
+- Add `-s` / `--pass-existing-opt` to pass packets unchanged when an injected
+  option already exists.
+
+### Changed
+- Clarify help text to describe packet-level handling when injected option codes
+  are already present.
+
 ## 0.5.3 - 2019-08-06
 ### Fixed
 - Fix two format arguments in debug output printing (fairly pedantic; not even
